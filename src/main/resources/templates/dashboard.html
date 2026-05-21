@@ -2,14 +2,20 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="UPI Offline Mesh - Encrypted payments over Bluetooth mesh network">
+    <meta name="theme-color" content="#6366f1">
     <title>📡 UPI Offline Mesh — Real-Time Demo</title>
     <style>
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
         
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
@@ -19,75 +25,111 @@
             --card-bg: #1e293b;
             --text-primary: #f1f5f9;
             --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
             --border: #334155;
             --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.4);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: 'Segoe UI', Trebuchet MS, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, var(--bg-dark) 0%, #1a2942 100%);
             color: var(--text-primary);
             margin: 0;
             padding: 0;
             min-height: 100vh;
             line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Connection Status Bar */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, #7c3aed 100%);
+            animation: statusPulse 2s ease-in-out infinite;
+            z-index: 200;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         /* Header */
         .header {
             background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
-            padding: 40px 20px;
+            padding: clamp(20px, 5vw, 40px) clamp(16px, 4vw, 20px);
             text-align: center;
             box-shadow: var(--shadow);
             position: sticky;
             top: 0;
             z-index: 100;
+            margin-top: 4px;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 2.5em;
+            font-size: clamp(1.5em, 5vw, 2.5em);
             font-weight: 800;
             color: white;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.6s ease-out;
+            letter-spacing: -0.5px;
         }
 
         .header p {
-            margin: 8px 0 0 0;
+            margin: clamp(4px, 2vw, 8px) 0 0 0;
             color: rgba(255, 255, 255, 0.9);
-            font-size: 1.1em;
+            font-size: clamp(0.9em, 2.5vw, 1.1em);
             font-weight: 500;
         }
 
         .java-badge {
             display: inline-block;
             background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
-            margin-top: 12px;
-            font-size: 0.85em;
+            margin-top: clamp(6px, 2vw, 12px);
+            font-size: clamp(0.75em, 1.5vw, 0.85em);
             font-weight: 600;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: var(--transition);
+        }
+
+        .java-badge:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: clamp(20px, 5vw, 40px);
         }
 
-        /* Grid System */
-        .grid { display: grid; gap: 24px; }
-        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
-        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        /* Grid System - Responsive */
+        .grid { 
+            display: grid; 
+            gap: clamp(16px, 4vw, 24px);
+        }
+        
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
         .grid-full { grid-template-columns: 1fr; }
+        .grid-auto { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 
-        @media (max-width: 768px) {
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
-            .header h1 { font-size: 1.8em; }
+        @media (max-width: 640px) {
+            .grid-2, .grid-3, .grid-auto { grid-template-columns: 1fr; }
+            .container { padding: clamp(12px, 3vw, 20px); }
         }
 
         /* Cards */
@@ -95,9 +137,10 @@
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 24px;
+            padding: clamp(16px, 4vw, 24px);
             box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            overflow: hidden;
         }
 
         .card:hover {
@@ -108,7 +151,7 @@
 
         .card h2 {
             margin: 0 0 20px 0;
-            font-size: 1.4em;
+            font-size: clamp(1.2em, 3vw, 1.4em);
             color: var(--text-primary);
             display: flex;
             align-items: center;
@@ -117,27 +160,51 @@
             padding-bottom: 12px;
         }
 
+        .card h3 {
+            margin: 16px 0 12px 0;
+            font-size: 1.05em;
+            color: var(--text-primary);
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,.1) 25%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.1) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
         /* Controls Section */
         .controls-section {
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
             border: 2px solid var(--primary);
             border-radius: 12px;
-            padding: 24px;
+            padding: clamp(16px, 4vw, 24px);
             margin-bottom: 30px;
         }
 
         .control-step {
             margin-bottom: 20px;
-            padding: 16px;
+            padding: clamp(12px, 3vw, 16px);
             background: rgba(30, 41, 59, 0.5);
             border-left: 4px solid var(--primary);
             border-radius: 8px;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .control-step:hover {
             background: rgba(30, 41, 59, 0.8);
             border-left-color: var(--info);
+        }
+
+        .control-step.collapsed {
+            max-height: 60px;
+            overflow: hidden;
         }
 
         .step-badge {
@@ -149,22 +216,44 @@
             border-radius: 50%;
             width: 32px;
             height: 32px;
+            min-width: 32px;
             font-weight: 700;
             margin-right: 12px;
             font-size: 1.1em;
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            flex-shrink: 0;
         }
 
         .control-step strong {
-            font-size: 1.1em;
+            font-size: clamp(0.95em, 2vw, 1.1em);
             color: var(--text-primary);
         }
 
-        /* Forms */
+        .toggle-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        @media (max-width: 640px) {
+            .toggle-btn { display: inline-block; }
+            .control-step.collapsed .form-group,
+            .control-step.collapsed .small,
+            .control-step.collapsed button {
+                display: none !important;
+            }
+        }
+
+        /* Forms - Mobile Optimized */
         .form-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
             margin: 12px 0;
         }
@@ -172,7 +261,8 @@
         .form-group label {
             font-weight: 600;
             color: var(--text-secondary);
-            min-width: 80px;
+            min-width: 70px;
+            font-size: clamp(0.85em, 1.5vw, 0.95em);
         }
 
         select, input[type="number"], input[type="text"] {
@@ -180,10 +270,11 @@
             color: var(--text-primary);
             border: 2px solid var(--border);
             border-radius: 8px;
-            padding: 10px 12px;
-            font-size: 0.95em;
-            transition: all 0.3s ease;
+            padding: clamp(8px, 2vw, 10px) 12px;
+            font-size: clamp(0.85em, 1.5vw, 0.95em);
+            transition: var(--transition);
             font-family: inherit;
+            min-height: 44px;
         }
 
         select:hover, input[type="number"]:hover, input[type="text"]:hover {
@@ -203,21 +294,39 @@
             color: var(--text-primary);
         }
 
-        /* Buttons */
+        @media (max-width: 640px) {
+            .form-group {
+                gap: 6px;
+                margin: 10px 0;
+            }
+
+            .form-group label {
+                min-width: 50px;
+            }
+
+            select, input[type="number"], input[type="text"] {
+                flex: 1;
+                min-width: 80px;
+            }
+        }
+
+        /* Buttons - Mobile Friendly */
         button {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: clamp(10px, 2vw, 12px) clamp(18px, 3vw, 24px);
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.95em;
+            font-size: clamp(0.85em, 1.5vw, 0.95em);
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            min-height: 44px;
+            white-space: nowrap;
         }
 
         button:hover {
@@ -253,8 +362,16 @@
             transform: none;
         }
 
-        button.loading {
-            pointer-events: none;
+        @media (max-width: 640px) {
+            button {
+                flex: 1;
+                min-width: 100%;
+                justify-content: center;
+            }
+
+            .control-step button {
+                min-width: auto;
+            }
         }
 
         /* Badge */
@@ -265,6 +382,7 @@
             font-size: 0.85em;
             font-weight: 600;
             margin-left: 8px;
+            transition: var(--transition);
         }
 
         .badge-online {
@@ -284,9 +402,9 @@
             background: rgba(30, 41, 59, 0.5);
             border: 2px solid var(--border);
             border-radius: 8px;
-            padding: 14px;
+            padding: clamp(12px, 3vw, 14px);
             margin-bottom: 12px;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .device:hover {
@@ -301,14 +419,14 @@
 
         .device strong {
             color: var(--text-primary);
-            font-size: 1.05em;
+            font-size: clamp(0.95em, 1.5vw, 1.05em);
         }
 
         .device .small {
             display: block;
             margin-top: 6px;
             color: var(--text-secondary);
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .packet-ids {
@@ -320,38 +438,56 @@
 
         .packet-id {
             font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 0.8em;
+            font-size: 0.75em;
             background: rgba(15, 23, 42, 0.7);
             padding: 4px 8px;
             border-radius: 4px;
             border: 1px solid var(--primary);
             color: #e0e7ff;
             word-break: break-all;
+            cursor: pointer;
+            transition: var(--transition);
         }
 
-        /* Tables */
+        .packet-id:hover {
+            background: rgba(99, 102, 241, 0.2);
+            copy: 'Copy packet ID';
+        }
+
+        /* Tables - Mobile Responsive */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.95em;
+            font-size: clamp(0.8em, 1.2vw, 0.95em);
         }
 
         th {
             background: rgba(99, 102, 241, 0.1);
             color: var(--text-secondary);
             font-weight: 700;
-            padding: 12px;
+            padding: clamp(10px, 2vw, 12px);
             text-align: left;
             border-bottom: 2px solid var(--primary);
             text-transform: uppercase;
-            font-size: 0.85em;
+            font-size: 0.8em;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
 
         td {
-            padding: 12px;
+            padding: clamp(10px, 2vw, 12px);
             border-bottom: 1px solid var(--border);
             color: var(--text-secondary);
+        }
+
+        tbody tr {
+            transition: var(--transition);
         }
 
         tbody tr:hover {
@@ -362,66 +498,68 @@
             border-bottom: none;
         }
 
+        @media (max-width: 768px) {
+            table { font-size: 0.85em; }
+            th, td { padding: 8px 10px; }
+        }
+
         /* Status Colors */
-        .status-SETTLED {
-            color: var(--success);
-            font-weight: 600;
+        .status-badge {
             display: inline-block;
             padding: 4px 10px;
-            background: rgba(16, 185, 129, 0.1);
+            background: transparent;
             border-radius: 4px;
-            border: 1px solid var(--success);
+            border: 1px solid;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .status-SETTLED {
+            color: var(--success);
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
         }
 
         .status-REJECTED {
             color: var(--danger);
-            font-weight: 600;
-            display: inline-block;
-            padding: 4px 10px;
+            border-color: var(--danger);
             background: rgba(239, 68, 68, 0.1);
-            border-radius: 4px;
-            border: 1px solid var(--danger);
         }
 
         .status-DUPLICATE_DROPPED {
             color: var(--warning);
-            font-weight: 600;
-            display: inline-block;
-            padding: 4px 10px;
+            border-color: var(--warning);
             background: rgba(245, 158, 11, 0.1);
-            border-radius: 4px;
-            border: 1px solid var(--warning);
         }
 
         .status-INVALID {
             color: var(--danger);
-            font-weight: 600;
-            display: inline-block;
-            padding: 4px 10px;
+            border-color: var(--danger);
             background: rgba(239, 68, 68, 0.1);
-            border-radius: 4px;
-            border: 1px solid var(--danger);
         }
 
         /* Log */
         #log {
             background: rgba(15, 23, 42, 0.8);
             color: #10b981;
-            padding: 16px;
+            padding: clamp(12px, 3vw, 16px);
             border-radius: 8px;
             font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 0.9em;
-            max-height: 300px;
+            font-size: clamp(0.8em, 1.2vw, 0.9em);
+            max-height: 400px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             white-space: pre-wrap;
             word-wrap: break-word;
             border: 1px solid var(--border);
             line-height: 1.5;
             box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+            tab-size: 2;
         }
 
         #log::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
 
         #log::-webkit-scrollbar-track {
@@ -433,6 +571,10 @@
             border-radius: 4px;
         }
 
+        #log::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+
         /* Balance */
         .balance {
             font-family: 'Monaco', monospace;
@@ -442,8 +584,12 @@
         }
 
         .small {
-            font-size: 0.85em;
+            font-size: clamp(0.75em, 1.2vw, 0.85em);
             color: var(--text-secondary);
+        }
+
+        .text-tertiary {
+            color: var(--text-tertiary);
         }
 
         /* Animations */
@@ -461,6 +607,11 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
         }
 
         .spinner {
@@ -482,9 +633,9 @@
             background: rgba(99, 102, 241, 0.1);
             border: 1px solid var(--primary);
             border-radius: 8px;
-            padding: 16px;
+            padding: clamp(14px, 3vw, 16px);
             text-align: center;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .stat-box:hover {
@@ -493,10 +644,96 @@
         }
 
         .stat-value {
-            font-size: 1.8em;
+            font-size: clamp(1.5em, 4vw, 1.8em);
             font-weight: 700;
             color: var(--primary);
         }
+
+        .stat-label {
+            font-size: clamp(0.75em, 1.2vw, 0.85em);
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: auto;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: clamp(12px, 3vw, 14px) clamp(16px, 3vw, 20px);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            animation: slideInUp 0.3s ease-out;
+            z-index: 1000;
+            max-width: 400px;
+            word-wrap: break-word;
+            font-size: clamp(0.85em, 1.5vw, 0.95em);
+        }
+
+        .notification.error {
+            background: rgba(239, 68, 68, 0.9);
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .notification {
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Responsive Typography */
+        @media (max-width: 768px) {
+            .header h1 { margin-bottom: 4px; }
+            .card h2 { gap: 8px; }
+        }
+
+        /* Print Styles */
+        @media print {
+            .controls-section, button, .notification { display: none; }
+            body { background: white; }
+            .card { border-color: #ccc; }
+        }
+
+        /* Accessibility */
+        button:focus, select:focus, input:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
 
         .stat-label {
             font-size: 0.85em;
@@ -540,12 +777,15 @@
 </head>
 <body>
 
+<!-- Connection Status Bar -->
+<div class="status-bar"></div>
+
 <!-- Header -->
 <div class="header">
     <h1>📡 UPI Offline Mesh</h1>
     <p>Real-Time Payment Routing Over Encrypted Mesh Network</p>
     <div class="java-badge">
-        ☕ Running on Java 25 LTS | Spring Boot 4.0.0
+        ☕ Java 25 LTS | Spring Boot 4.0.0
     </div>
 </div>
 
@@ -558,11 +798,11 @@
         </div>
         <div class="stat-box">
             <div class="stat-value" id="settledTx">0</div>
-            <div class="stat-label">Settled</div>
+            <div class="stat-label">Settled Successfully</div>
         </div>
         <div class="stat-box">
             <div class="stat-value" id="cacheSize">0</div>
-            <div class="stat-label">Cache Size</div>
+            <div class="stat-label">Idempotency Cache</div>
         </div>
     </div>
 
@@ -570,9 +810,10 @@
     <div class="controls-section">
         <h2>🎬 Demo Flow - Send Payment Through Mesh</h2>
 
-        <div class="control-step">
+        <div class="control-step" id="step1">
             <span class="step-badge">1</span>
             <strong>Compose & Inject Payment</strong>
+            <button class="toggle-btn" onclick="toggleStep(this)">▼</button>
             <div class="form-group" style="margin-top: 12px;">
                 <label>From:</label>
                 <select id="senderVpa">
@@ -580,17 +821,18 @@
                     <option>bob@demo</option>
                     <option>carol@demo</option>
                 </select>
-                <span style="color: var(--text-secondary);">→</span>
-                <label>To:</label>
+                <label style="margin-left: auto;">To:</label>
                 <select id="receiverVpa">
                     <option>bob@demo</option>
                     <option>carol@demo</option>
                     <option>alice@demo</option>
                     <option>dave@demo</option>
                 </select>
+            </div>
+            <div class="form-group">
                 <label>Amount:</label>
                 <input type="number" id="amount" value="500" min="1" max="10000" style="width: 120px;">
-                <label>PIN:</label>
+                <label style="margin-left: auto;">PIN:</label>
                 <input type="text" id="pin" value="1234" maxlength="4" style="width: 100px;">
             </div>
             <button onclick="sendPacket()">
@@ -598,33 +840,36 @@
             </button>
         </div>
 
-        <div class="control-step">
+        <div class="control-step" id="step2">
             <span class="step-badge">2</span>
             <strong>Run Mesh Gossip</strong> — packets hop between devices
+            <button class="toggle-btn" onclick="toggleStep(this)">▼</button>
             <div style="margin-top: 12px;">
-                <button class="secondary" onclick="gossip()">
+                <button class="secondary" onclick="gossip()" style="width: 100%;">
                     <span>🔄</span> Run Gossip Round
                 </button>
-                <span class="small" style="margin-left: 12px;">Run 2-3 times to route through mesh</span>
+                <span class="small" style="margin-left: 12px; display: block; margin-top: 6px;">Run 2-3 times to route through mesh</span>
             </div>
         </div>
 
-        <div class="control-step">
+        <div class="control-step" id="step3">
             <span class="step-badge">3</span>
             <strong>Upload via Bridge</strong> — node with 4G reaches backend
+            <button class="toggle-btn" onclick="toggleStep(this)">▼</button>
             <div style="margin-top: 12px;">
-                <button class="secondary" onclick="flushBridges()">
+                <button class="secondary" onclick="flushBridges()" style="width: 100%;">
                     <span>📡</span> Bridges Upload to Backend
                 </button>
-                <span class="small" style="margin-left: 12px;">Exercises idempotency (safe to call multiple times)</span>
+                <span class="small" style="margin-left: 12px; display: block; margin-top: 6px;">Exercises idempotency (safe to call multiple times)</span>
             </div>
         </div>
 
-        <div class="control-step" style="border-left-color: var(--danger);">
+        <div class="control-step" id="step4" style="border-left-color: var(--danger);">
             <span class="step-badge" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">🔄</span>
             <strong>Reset Everything</strong>
+            <button class="toggle-btn" onclick="toggleStep(this)">▼</button>
             <div style="margin-top: 12px;">
-                <button class="danger" onclick="resetMesh()">
+                <button class="danger" onclick="resetMesh()" style="width: 100%;">
                     <span>🗑</span> Reset Mesh + Cache
                 </button>
             </div>
@@ -636,29 +881,39 @@
         <!-- Mesh Devices -->
         <div class="card">
             <h2>📱 Mesh Network Devices</h2>
-            <div id="devices" style="max-height: 400px; overflow-y: auto;"></div>
+            <div id="devices" style="max-height: 450px; overflow-y: auto; -webkit-overflow-scrolling: touch;"></div>
         </div>
 
         <!-- Accounts -->
         <div class="card">
             <h2>🏦 Account Balances</h2>
-            <table id="accounts-table">
-                <thead>
-                    <tr>
-                        <th>VPA</th>
-                        <th>Holder</th>
-                        <th style="text-align: right;">Balance</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <div class="table-wrapper">
+                <table id="accounts-table">
+                    <thead>
+                        <tr>
+                            <th>VPA</th>
+                            <th>Holder</th>
+                            <th style="text-align: right;">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3" class="text-tertiary" style="text-align: center; padding: 40px 20px;">
+                                <div class="skeleton" style="height: 40px; margin-bottom: 10px;"></div>
+                                <div class="skeleton" style="height: 40px; margin-bottom: 10px;"></div>
+                                <div class="skeleton" style="height: 40px;"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Transactions Ledger -->
     <div class="card" style="margin-top: 24px;">
         <h2>📜 Transaction Ledger (Real-Time)</h2>
-        <div style="overflow-x: auto;">
+        <div class="table-wrapper">
             <table id="tx-table">
                 <thead>
                     <tr>
@@ -669,194 +924,360 @@
                         <th>Status</th>
                         <th>Bridge</th>
                         <th>Hops</th>
-                        <th>Settled</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <tr>
+                        <td colspan="7" class="text-tertiary" style="text-align: center; padding: 40px 20px;">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                No transactions yet. Start by composing a payment above!
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
 
     <!-- Activity Log -->
-    <div class="card" style="margin-top: 24px;">
+    <div class="card" style="margin-top: 24px; margin-bottom: 40px;">
         <h2>🪵 Real-Time Activity Log</h2>
         <div id="log"></div>
     </div>
 </div>
 
 <script>
-// Logging
+// App State
+let isLoading = false;
+const refreshRate = 2000;
+
+// Toggle step on mobile
+function toggleStep(btn) {
+    const step = btn.parentElement;
+    step.classList.toggle('collapsed');
+    btn.textContent = step.classList.contains('collapsed') ? '▶' : '▼';
+}
+
+// Enhanced logging with timestamps
 function log(msg) {
     const el = document.getElementById('log');
     const timestamp = new Date().toLocaleTimeString();
-    el.textContent = `[${timestamp}] ${msg}\n` + el.textContent;
-    if (el.textContent.length > 5000) {
-        el.textContent = el.textContent.substring(0, 5000);
+    const hour = new Date().getHours().toString().padStart(2, '0');
+    const min = new Date().getMinutes().toString().padStart(2, '0');
+    const sec = new Date().getSeconds().toString().padStart(2, '0');
+    el.textContent = `[${hour}:${min}:${sec}] ${msg}\n` + el.textContent;
+    if (el.textContent.length > 8000) {
+        el.textContent = el.textContent.substring(0, 8000);
     }
 }
 
-// Show notification
+// Enhanced notification with better positioning
 function notify(msg, type = 'success') {
     const notif = document.createElement('div');
-    notif.className = 'notification';
-    notif.style.background = type === 'success' ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)';
-    notif.textContent = msg;
+    notif.className = 'notification ' + (type === 'error' ? 'error' : '');
+    notif.style.background = type === 'success' 
+        ? 'rgba(16, 185, 129, 0.9)' 
+        : 'rgba(239, 68, 68, 0.9)';
+    notif.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
     document.body.appendChild(notif);
-    setTimeout(() => notif.remove(), 3000);
+    setTimeout(() => {
+        notif.style.animation = 'slideInUp 0.3s ease-in reverse';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
 }
 
-// Refresh all data
+// Copy to clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        notify('Copied to clipboard');
+    }).catch(() => {
+        console.log('Copy failed, but that\'s ok');
+    });
+}
+
+// Refresh all data with error handling
 async function refresh() {
+    if (isLoading) return;
+    isLoading = true;
+    
     try {
-        // Mesh state
-        const m = await fetch('/api/mesh/state').then(r => r.json());
-        const devicesDiv = document.getElementById('devices');
-        devicesDiv.innerHTML = m.devices.map(d => {
-            const packetHtml = d.packetIds.length > 0 
-                ? `<div class="packet-ids">${d.packetIds.map(id => `<span class="packet-id">${id.substring(0, 12)}...</span>`).join('')}</div>`
-                : '<div class="small" style="margin-top: 8px; color: #94a3b8;">No packets</div>';
-            return `
-                <div class="device ${d.hasInternet ? 'bridge' : ''}">
-                    <strong>${d.deviceId}</strong>
-                    <span class="badge ${d.hasInternet ? 'badge-online' : 'badge-offline'}">
-                        ${d.hasInternet ? '🌐 4G ONLINE' : '🚫 OFFLINE'}
-                    </span>
-                    <div class="small">Holding ${d.packetCount} packet(s)</div>
-                    ${packetHtml}
-                </div>
-            `;
-        }).join('');
-        document.getElementById('cacheSize').textContent = m.idempotencyCacheSize;
+        // Parallel API calls
+        const [meshData, accountsData, txData] = await Promise.all([
+            fetch('/api/mesh/state').then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            }).catch(e => {
+                log(`⚠️ Mesh API error: ${e.message}`);
+                return null;
+            }),
+            fetch('/api/accounts').then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            }).catch(e => {
+                log(`⚠️ Accounts API error: ${e.message}`);
+                return null;
+            }),
+            fetch('/api/transactions').then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            }).catch(e => {
+                log(`⚠️ Transactions API error: ${e.message}`);
+                return null;
+            })
+        ]);
 
-        // Accounts
-        const accs = await fetch('/api/accounts').then(r => r.json());
-        document.querySelector('#accounts-table tbody').innerHTML = accs.map(a => `
-            <tr>
-                <td><strong>${a.vpa}</strong></td>
-                <td>${a.holderName}</td>
-                <td class="balance" style="text-align: right;">₹${parseFloat(a.balance).toFixed(2)}</td>
-            </tr>
-        `).join('');
+        // Update mesh devices
+        if (meshData) {
+            const devicesDiv = document.getElementById('devices');
+            if (meshData.devices.length === 0) {
+                devicesDiv.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📱</div>No devices initialized</div>';
+            } else {
+                devicesDiv.innerHTML = meshData.devices.map(d => {
+                    const packetHtml = d.packetIds.length > 0 
+                        ? `<div class="packet-ids">${d.packetIds.map(id => `<span class="packet-id" onclick="copyToClipboard('${id}')" title="Click to copy">${id.substring(0, 10)}...</span>`).join('')}</div>`
+                        : '<div class="small" style="margin-top: 8px; color: #94a3b8;">No packets</div>';
+                    return `
+                        <div class="device ${d.hasInternet ? 'bridge' : ''}">
+                            <strong>${d.deviceId}</strong>
+                            <span class="badge ${d.hasInternet ? 'badge-online' : 'badge-offline'}">
+                                ${d.hasInternet ? '🌐 4G ONLINE' : '📵 OFFLINE'}
+                            </span>
+                            <div class="small">Holding <strong>${d.packetCount}</strong> packet(s)</div>
+                            ${packetHtml}
+                        </div>
+                    `;
+                }).join('');
+            }
+            document.getElementById('cacheSize').textContent = meshData.idempotencyCacheSize;
+        }
 
-        // Transactions
-        const txs = await fetch('/api/transactions').then(r => r.json());
-        const settledCount = txs.filter(t => t.status === 'SETTLED').length;
-        document.getElementById('totalTx').textContent = txs.length;
-        document.getElementById('settledTx').textContent = settledCount;
+        // Update accounts
+        if (accountsData) {
+            const tbody = document.querySelector('#accounts-table tbody');
+            if (accountsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-tertiary" style="text-align: center; padding: 20px;">No accounts found</td></tr>';
+            } else {
+                tbody.innerHTML = accountsData.map(a => `
+                    <tr>
+                        <td><strong>${a.vpa}</strong></td>
+                        <td class="small">${a.holderName}</td>
+                        <td class="balance" style="text-align: right;">₹${parseFloat(a.balance).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
 
-        document.querySelector('#tx-table tbody').innerHTML = txs.slice(0, 20).map(t => `
-            <tr>
-                <td><strong>#${t.id}</strong></td>
-                <td>${t.senderVpa}</td>
-                <td>${t.receiverVpa}</td>
-                <td class="balance" style="text-align: right;">₹${parseFloat(t.amount).toFixed(2)}</td>
-                <td><span class="status-${t.status}">${t.status}</span></td>
-                <td class="small">${t.bridgeNodeId || '-'}</td>
-                <td class="small">${t.hopCount || 0}</td>
-                <td class="small">${new Date(t.settledAt).toLocaleTimeString()}</td>
-            </tr>
-        `).join('');
+        // Update transactions
+        if (txData) {
+            const settledCount = txData.filter(t => t.status === 'SETTLED').length;
+            document.getElementById('totalTx').textContent = txData.length;
+            document.getElementById('settledTx').textContent = settledCount;
+
+            const tbody = document.querySelector('#tx-table tbody');
+            if (txData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-tertiary" style="text-align: center; padding: 40px 20px;"><div class="empty-state"><div class="empty-state-icon">📭</div>No transactions yet. Start by composing a payment!</div></td></tr>';
+            } else {
+                tbody.innerHTML = txData.slice(0, 15).map(t => `
+                    <tr>
+                        <td><strong>#${t.id}</strong></td>
+                        <td class="small">${t.senderVpa}</td>
+                        <td class="small">${t.receiverVpa}</td>
+                        <td class="balance" style="text-align: right;">₹${parseFloat(t.amount).toFixed(2)}</td>
+                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                        <td class="small">${t.bridgeNodeId || '-'}</td>
+                        <td class="small">${t.hopCount || 0} hop(s)</td>
+                    </tr>
+                `).join('');
+            }
+        }
     } catch (e) {
-        console.error(e);
+        console.error('Refresh error:', e);
+        log(`❌ Data refresh failed: ${e.message}`);
+    } finally {
+        isLoading = false;
     }
 }
 
+// Send packet
 async function sendPacket() {
-    const btn = event.target;
+    const btn = event?.target;
+    if (!btn || isLoading) return;
+    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Injecting...';
     
     try {
+        const sender = document.getElementById('senderVpa').value;
+        const receiver = document.getElementById('receiverVpa').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const pin = document.getElementById('pin').value;
+
+        if (sender === receiver) {
+            notify('Cannot send to yourself!', 'error');
+            return;
+        }
+
+        if (amount <= 0) {
+            notify('Amount must be greater than 0', 'error');
+            return;
+        }
+
+        if (pin.length !== 4 || isNaN(pin)) {
+            notify('PIN must be 4 digits', 'error');
+            return;
+        }
+
         const body = {
-            senderVpa: document.getElementById('senderVpa').value,
-            receiverVpa: document.getElementById('receiverVpa').value,
-            amount: parseFloat(document.getElementById('amount').value),
-            pin: document.getElementById('pin').value,
+            senderVpa: sender,
+            receiverVpa: receiver,
+            amount: amount,
+            pin: pin,
             ttl: 5,
             startDevice: 'phone-alice'
         };
+
         const r = await fetch('/api/demo/send', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(body)
-        }).then(r => r.json());
-        log(`📤 Packet injected: ${r.packetId.substring(0, 12)}... (TTL: ${r.ttl})`);
-        notify('✓ Payment packet injected into mesh!');
-        refresh();
+        }).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        });
+
+        log(`📤 Packet injected: ${r.packetId.substring(0, 10)}... (TTL: ${r.ttl})`);
+        notify(`✓ Payment packet ₹${amount} injected from ${sender}!`);
+        await refresh();
     } catch (e) {
         log(`❌ Error: ${e.message}`);
-        notify('Error sending packet', 'error');
+        notify(`Failed to send packet: ${e.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>📤</span> Inject into Mesh';
     }
 }
 
+// Run gossip
 async function gossip() {
-    const btn = event.target;
+    const btn = event?.target;
+    if (!btn || isLoading) return;
+    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Gossiping...';
     
     try {
-        const r = await fetch('/api/mesh/gossip', {method: 'POST'}).then(r => r.json());
+        const r = await fetch('/api/mesh/gossip', {
+            method: 'POST'
+        }).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        });
+
         log(`🔄 Gossip round: ${r.transfers} transfer(s)`);
         notify(`✓ Gossip complete: ${r.transfers} transfers`);
-        refresh();
+        await refresh();
     } catch (e) {
         log(`❌ Error: ${e.message}`);
-        notify('Error running gossip', 'error');
+        notify(`Failed to run gossip: ${e.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>🔄</span> Run Gossip Round';
     }
 }
 
+// Flush bridges
 async function flushBridges() {
-    const btn = event.target;
+    const btn = event?.target;
+    if (!btn || isLoading) return;
+    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Uploading...';
     
     try {
-        const r = await fetch('/api/mesh/flush', {method: 'POST'}).then(r => r.json());
+        const r = await fetch('/api/mesh/flush', {
+            method: 'POST'
+        }).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        });
+
         log(`📡 Bridge upload: ${r.uploadsAttempted} attempt(s)`);
         r.results.forEach(res => {
             log(`   → ${res.bridgeNode}: ${res.outcome} ${res.reason ? `(${res.reason})` : ''}`);
         });
         notify(`✓ ${r.uploadsAttempted} bridge uploads completed`);
-        refresh();
+        await refresh();
     } catch (e) {
         log(`❌ Error: ${e.message}`);
-        notify('Error flushing bridges', 'error');
+        notify(`Failed to flush bridges: ${e.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>📡</span> Bridges Upload to Backend';
     }
 }
 
+// Reset mesh
 async function resetMesh() {
-    if (!confirm('Reset mesh network and cache?')) return;
+    if (!confirm('⚠️ This will reset the mesh network and clear all packets. Continue?')) {
+        return;
+    }
     
-    const btn = event.target;
+    const btn = event?.target;
+    if (!btn || isLoading) return;
+    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Resetting...';
     
     try {
-        await fetch('/api/mesh/reset', {method: 'POST'});
-        log('🗑 Mesh and idempotency cache cleared');
+        await fetch('/api/mesh/reset', {
+            method: 'POST'
+        }).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        });
+
+        log('🗑️  Mesh and idempotency cache cleared');
         notify('✓ Mesh reset complete');
-        refresh();
+        await refresh();
     } catch (e) {
         log(`❌ Error: ${e.message}`);
-        notify('Error resetting mesh', 'error');
+        notify(`Failed to reset: ${e.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>🗑</span> Reset Mesh + Cache';
     }
 }
 
+// Handle visibility change for performance
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        log('⏸️  Dashboard paused (browser tab inactive)');
+    } else {
+        log('▶️  Dashboard resumed');
+        refresh();
+    }
+});
+
+// Handle errors globally
+window.addEventListener('error', (event) => {
+    console.error('Global error:', event.error);
+});
+
 // Initial load and auto-refresh
-refresh();
-setInterval(refresh, 2000);
-log('✅ Dashboard connected to backend on Java 25 LTS');
+window.addEventListener('load', () => {
+    refresh();
+    log('✅ Dashboard connected on Java 25 LTS | Spring Boot 4.0.0');
+    setInterval(refresh, refreshRate);
+});
+
+// Prevent accidental navigation with unsaved actions
+window.addEventListener('beforeunload', (e) => {
+    if (isLoading) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 </script>
 
 </body>
